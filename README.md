@@ -11,7 +11,7 @@
 
 这是 Windows 桌面端。**安卓端（手机 App）在另一个仓库，两边存档互通：**
 
-> 👉 **https://github.com/\<your-username\>/shehui**
+> 👉 **https://github.com/wan101218/kith-android**
 
 ![Kith 桌面端主界面](docs/screenshots/home.png)
 
