@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kith 同步桥</title>
+<style>
+  :root { --ink:#1C1F29; --amber:#F5B544; --amber-deep:#C9820F; --bg:#F7F8FA; --card:#fff; --line:#E7EAF0; --sub:#5A6070; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { background:var(--bg); color:var(--ink); font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; min-height:100vh; padding:20px 16px 48px; }
+  .wrap { max-width:560px; margin:0 auto; }
+  .brand { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .logo { width:34px; height:34px; border-radius:10px; background:conic-gradient(from 210deg, #F5B544, #6B5BD2, #1F8A80, #F5B544); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:17px; }
+  h1 { font-size:22px; letter-spacing:.5px; }
+  .sub { color:var(--sub); font-size:13px; margin:6px 0 18px; line-height:1.6; }
+  .lan { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:18px; }
+  .lan .k { font-size:12px; color:var(--sub); margin-bottom:4px; }
+  .lan .v { font-size:16px; font-weight:700; color:var(--amber-deep); word-break:break-all; user-select:all; }
+  .sec { font-size:13px; font-weight:600; color:var(--sub); margin:20px 4px 8px; letter-spacing:1px; }
+  .item { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 15px; display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .cover { width:44px; height:44px; border-radius:11px; flex:none; }
+  .meta { flex:1; min-width:0; }
+  .meta .n { font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .meta .d { font-size:12px; color:var(--sub); margin-top:2px; }
+  .chip { display:inline-block; font-size:11px; color:#6B5BD2; background:#EDEAFF; border-radius:6px; padding:1px 7px; margin-right:6px; }
+  .btn { flex:none; border:none; border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; background:var(--ink); color:#fff; }
+  .btn.amber { background:var(--amber); color:#221A08; }
+  .drop { border:2px dashed #C9CFDA; border-radius:16px; padding:26px 16px; text-align:center; color:var(--sub); font-size:14px; background:var(--card); transition:.2s; }
+  .drop.on { border-color:var(--amber); background:#FFF9EC; color:var(--amber-deep); }
+  .drop b { color:var(--amber-deep); }
+  input[type=file] { display:none; }
+  .toast { position:fixed; left:50%; bottom:32px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff; font-size:13px; padding:10px 18px; border-radius:12px; opacity:0; transition:.25s; pointer-events:none; max-width:86vw; text-align:center; line-height:1.5; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.err { background:#C0392B; }
+  .empty { text-align:center; color:var(--sub); font-size:13px; padding:26px 0; }
+  .tip { font-size:12px; color:var(--sub); line-height:1.8; margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 15px; }
+  .tip b { color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="logo">K</div><h1>Kith 同步桥</h1></div>
+  <div class="sub">手机端「导出社会」生成的 <b>.kith.json</b>，通过这里传进电脑；电脑端的社会也可以下载回手机导入。双端数据就此打通。</div>
+  <div class="lan"><div class="k">电脑局域网地址（手机与电脑需连同一 Wi-Fi）</div><div class="v" id="lanUrl">加载中…</div></div>
+
+  <div class="sec">⬆ 从手机上传到电脑</div>
+  <div class="drop" id="drop">点这里选择 <b>.kith.json</b> 存档文件<br><span style="font-size:12px">（或把文件拖到这里）</span></div>
+  <input type="file" id="file" accept=".json,application/json">
+
+  <div class="sec">⬇ 从电脑下载到手机</div>
+  <div id="list"><div class="empty">加载中…</div></div>
+
+  <div class="tip">
+    <b>怎么用：</b>手机打开 Kith → 社会卡片右上角菜单 → <b>导出社会</b> → 保存文件；<br>
+    回到这里点上传，就导入进电脑版了。反过来：点「下载」得到存档 → 在手机 Kith 首页点导入。<br>
+    每次导入都会生成一份新副本，不会覆盖两端已有的社会。
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = s => document.querySelector(s);
+function toast(msg, err) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(t._h); t._h = setTimeout(() => t.className = 'toast', 3200);
+}
+fetch('/api/sync-info').then(r => r.json()).then(d => { $('#lanUrl').textContent = d.lanUrl; }).catch(() => {});
+function cover(seed) {
+  const h = Math.abs(seed) % 360, h2 = (h + 70) % 360;
+  return `background:linear-gradient(135deg, hsl(${h},52%,62%), hsl(${h2},45%,42%))`;
+}
+function esc(s) { return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function loadList() {
+  fetch('/sync/list').then(r => r.json()).then(d => {
+    const el = $('#list');
+    if (!d.societies.length) { el.innerHTML = '<div class="empty">电脑上还没有社会，先从手机传一份过来吧</div>'; return; }
+    el.innerHTML = d.societies.map(s => `
+      <div class="item">
+        <div class="cover" style="${cover(s.coverSeed)};${s.coverUrl ? `background-image:url('/media/${encodeURIComponent(s.id)}/${s.coverUrl}');background-size:cover;background-position:center` : ''}"></div>
+        <div class="meta">
+          <div class="n">${esc(s.name)}</div>
+          <div class="d"><span class="chip">${esc(s.orientationLabel||'')}</span>${s.characterCount} 人 · ${s.relationCount} 关系</div>
+        </div>
+        <button class="btn" onclick="location.href='/sync/download/${s.id}'">下载</button>
+      </div>`).join('');
+  }).catch(() => { $('#list').innerHTML = '<div class="empty">列表加载失败</div>'; });
+}
+const fileInput = $('#file'), drop = $('#drop');
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('on'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('on'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('on'); if (e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handle(fileInput.files[0]); fileInput.value=''; });
+async function handle(f) {
+  if (f.size > 30 * 1024 * 1024) { toast('文件超过 30MB，疑似不是社会存档', true); return; }
+  toast('正在上传「' + f.name + '」…');
+  try {
+    const text = await f.text();
+    const r = await fetch('/sync/upload', { method:'POST', headers:{'Content-Type':'application/json'}, body:text });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || '导入失败');
+    toast('✓ 已导入「' + d.name + '」到电脑');
+    loadList();
+  } catch (e) { toast(e.message || '上传失败', true); }
+}
+loadList();
+</script>
+</body>
+</html>

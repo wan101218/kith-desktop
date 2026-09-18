@@ -1,0 +1,66 @@
+{
+  "name": "kith",
+  "productName": "Kith",
+  "version": "0.2.0",
+  "description": "Kith · 造一个社会，看它自己活起来",
+  "main": "main.js",
+  "author": "Kith",
+  "private": true,
+  "scripts": {
+    "prepare-res": "python ../tools/prepare_installer.py",
+    "dist": "npm run prepare-res && electron-builder"
+  },
+  "build": {
+    "appId": "app.kith.desktop",
+    "productName": "Kith",
+    "directories": {
+      "output": "dist",
+      "buildResources": "."
+    },
+    "files": [
+      "main.js",
+      "package.json"
+    ],
+    "extraResources": [
+      "kith-server.exe",
+      "kith.ico",
+      {
+        "from": "web",
+        "to": "web"
+      },
+      {
+        "from": "assets",
+        "to": "assets"
+      },
+      {
+        "from": "server/sync_page.html",
+        "to": "server/sync_page.html"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "kith.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Kith",
+      "artifactName": "Kith-Setup-${version}.${ext}",
+      "uninstallDisplayName": "Kith"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.4.1",
+    "electron-builder": "^26.15.3"
+  }
+}

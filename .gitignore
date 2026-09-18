@@ -1,0 +1,39 @@
+# 打包产物 / 运行时（体积大，走 Releases 而非仓库）
+app/
+installer/dist/
+installer/node_modules/
+installer/package-lock.json
+build_install/
+build_tmp/
+
+# installer/ 下只留源码，资源由 tools/prepare_installer.py 复制进去
+installer/kith-server.exe
+installer/kith.ico
+installer/web/
+installer/assets/
+installer/server/
+
+# 诊断过程产物
+tools/*.png
+
+# 用户数据：含 API Key、会话、日志，不入库
+data/
+*.kith.json
+
+# Python
+__pycache__/
+*.py[cod]
+
+# 节点
+node_modules/
+
+# 工作笔记（本地记忆目录，不随仓库公开）
+.Kith/
+.workbuddy/
+
+# 编辑器与系统
+.vscode/
+.idea/
+.workbuddy/
+Thumbs.db
+desktop.ini

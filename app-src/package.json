@@ -1,0 +1,8 @@
+{
+  "name": "kith",
+  "productName": "Kith",
+  "version": "0.1.0",
+  "description": "Kith · 造一个社会，看它自己活起来",
+  "main": "main.js",
+  "private": true
+}
